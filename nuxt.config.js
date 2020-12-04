@@ -53,7 +53,8 @@ export default {
   */
   plugins: [
     `~/plugins/dashboard-plugin.js`,
-    { src: '~plugins/vue-full-calendar.js', ssr: false },
+    { src: '~plugins/vue-full-calendar.js', ssr: false},
+    { src: '~plugins/vue-slider-bar.js', ssr: false },
   ],
   /*
   ** Nuxt.js dev-modules

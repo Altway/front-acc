@@ -13,7 +13,7 @@
 
  * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  */
-import Vue from 'vue';
-import VueFullCalendar from 'vue-full-calendar';
-
-Vue.component('VueFullCalendar', VueFullCalendar)
+import Vue from 'vue'
+import VueSlideBar from 'vue-slide-bar'
+ 
+Vue.component('VueSlideBar', VueSlideBar)
