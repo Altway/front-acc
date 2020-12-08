@@ -3,6 +3,8 @@
     <div>
       <multiselect placeholder="Select coins" :taggable="true" :options="options" :multiple="true" :close-on-select="false" v-model="coins_selected"></multiselect>
     </div>
+    <base-input type="=capital" label="Capital" placeholder="Capital" v-model="capital"/>
+    <base-input type="risk_free_rate" label="Risk free rate" placeholder="Risk free rate" v-model="risk_free_rate"/>
     <div class="col-md-12">
       <base-dropdown title-classes="btn btn-secondary" title="Strategy">
           <a class="dropdown-item" v-bind:key="value" v-for="value in strategy_dict" @click="update_strategy(value)">
@@ -16,7 +18,7 @@
 
     <div class="col-md-12">
       <card>
-        <form>
+        <form @submit.prevent>
           <div class="form-row">
             <div v-if="risk_choice == 'Sample covariance'">
               <base-input type="risk" label="Risk percentage" placeholder="Risk" v-model="risk_percentage"/>
@@ -58,21 +60,31 @@
           <base-checkbox v-model="short_selling">Enable Short Selling</base-checkbox>
         </base-input>
         
-        <base-button type="primary" native-type="Submit" v-on:click="start_simulation()">Start Simulation</base-button>
+        <base-button type="button" native-type="Submit" v-on:click="start_simulation()">Start Simulation</base-button>
         </form>
-
+    <div class="col-md-12">
+      <card>
+        <div>{{ final_allocation }}</div>
+        <!--<div><client-only><RandomChart/></client-only></div>-->
+        <div>
+          <!-- <LineChart :chartData="chart_data"/> -->
+          <PieChart :chartData="chart_data"/>
+        </div>
+      </card>
+    </div>
       </card>
     </div>
   </div>
 </template>
 <script>
-  import {BaseDropdown} from '@/components'
+  import {BaseDropdown, LineChart, PieChart} from '@/components'
   import Multiselect from 'vue-multiselect'
 
   export default {
     async fetch() {
       this.strategy_dict = await fetch('http://localhost:8000/strategy/risk').then(res => res.json())
       this.returns_dict = await fetch('http://localhost:8000/strategy/returns').then(res => res.json())
+      this.goals_list = await fetch('http://localhost:8000/strategy/goals').then(res => res.json())
       let r = await fetch('http://localhost:8000/strategy/coins_list').then(res => res.json())
       this.options = r.map(el=>el.symbol)
     },
@@ -85,22 +97,33 @@
         short_selling: false,
         returns_choice: "",
         risk_percentage: 0,
+        risk_free_rate: 0,
+        final_allocation: null,
+        chart_options: {
+          responsive: true,
+          maintainAspectRatio: true
+        },
+        chart_data: {},
+        capital: 0,
         expected_return: 0,
         value: null,
         coins_selected: null,
         options: [],
+        goals_list: [],
         gamma: 1,
         slider: {
           lineHeight: 10,
           processStyle: {
             backgroundColor: 'blue'
           }
-        }
-      }
+        },
+     }
     },
     components: {
       BaseDropdown,
       Multiselect,
+      LineChart,
+      PieChart,
     },
     methods: {
       update_strategy(choice) {
@@ -117,9 +140,31 @@
           "expected_return": this.expected_return,
           "coins_selected": this.coins_selected,
           "short_selling": this.short_selling,
+          "risk_free_rate": this.risk_free_rate,
+          "capital": this.capital,
           "gamma": this.gamma,
         }
-        const data = await this.$http.$post('http://localhost:8000/strategy/input', payload);
+        this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/input', payload);
+
+        let calculated_chartdata = {
+          labels: Object.keys(this.final_allocation),
+          datasets: [{
+            label: 'Allocation',
+            backgroundColor: ['#00c09d', '#e2e2e2'],
+            data: Object.values(this.final_allocation)
+          }]
+        }
+        this.chart_data = calculated_chartdata;
+        //const truc = await this.$http.$post('http://localhost:8000/strategy/input', payload);
+        //const r = await truc.text()
+
+        //this.final_allocation = tru.map(el=>el.symbol)
+      
+        //this.final_allocation  = await this.$http.$post('http://localhost:8000/strategy/input', payload).then(res => json());
+        //const truc = await res.json()
+        //console.log(truc)
+        //return truc
+        //this.final_allocation = data.json()
       },
     }
   };

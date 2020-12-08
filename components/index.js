@@ -25,6 +25,8 @@ import BasePagination from './BasePagination.vue';
 
 import SidebarPlugin from './SidebarPlugin';
 
+import LineChart from './LineChart.vue';
+import PieChart from './PieChart.vue';
 
 export {
   BaseCheckbox,
@@ -47,5 +49,7 @@ export {
   RouteBreadCrumb,
   Modal,
   BaseButton,
-  LoadingPanel
+  LoadingPanel,
+  LineChart,
+  PieChart
 };
