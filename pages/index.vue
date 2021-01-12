@@ -4,6 +4,7 @@
     <div class="col-12">
       <card type="chart">
         <template slot="header">
+          <base-input type="=id" label="hypotethis_id" placeholder="hypotethis_id" v-model="hypotethis_id"/>
           <div class="row">
             <div class="col-sm-6" :class="isRTL ? 'text-right' : 'text-left'">
               <h5 class="card-category">Total shipments</h5>
@@ -148,22 +149,22 @@
           <el-table-column
             min-width="150"
             sortable
-            label="Country"
-            property="country"
+            label="Capital"
+            property="capital"
           ></el-table-column>
           <el-table-column
             min-width="150"
             sortable
-            label="City"
-            property="city"
+            label="Gamma"
+            property="gamma"
           ></el-table-column>
           <el-table-column
             min-width="150"
             sortable
             align="right"
             header-align="right"
-            label="Salary"
-            property="salary"
+            label="Method"
+            property="method"
           ></el-table-column>
         </el-table>
       </card>
@@ -200,6 +201,40 @@ let bigChartDatasetOptions = {
 }
 
 export default {
+  async fetch() {
+
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: this.hypothethis_id })
+    };
+    const response = await fetch("http://localhost:8000/strategy/preferred_hypothethis", requestOptions).then(res => res.json());
+    //const data = await response.json();
+    this.tableData = response
+    console.log(response)
+    // POST request using fetch with async/await
+    /**
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({id: 2})
+    };
+    const response = await fetch("http://localhost:8000/strategy/preferred_hypothethis")//, requestOptions);
+    const data = await response.json();
+    this.tableData = data
+    console.log(response)
+    */
+    // this.postId = data.id;
+    // let t = await this.$http.$post('http://localhost:8000/strategy/preferred_hypothethis', payload)
+    // this.tableData = t.json()
+    //var asObject = JSON.parse(tableDat);
+    //console.log(typeof(this.asObject))
+    //console.log(typeof(tableDat))
+    // this.goals_list = await fetch('http://localhost:8000/strategy/goals').then(res => res.json())
+    // let r = await fetch('http://localhost:8000/strategy/coins_list').then(res => res.json())
+    // this.options = r.map(el=>el.symbol)
+  },
+  fetchOnServer: false,
   name: 'dashboard',
   components: {
     LineChart,
@@ -210,6 +245,9 @@ export default {
   },
   data () {
     return {
+      hypothethis_id: 2,
+      tableData: [],
+      /*
       tableData: [
         {
           id: 1,
@@ -246,7 +284,7 @@ export default {
           country: 'Malawi',
           city: 'Feldkirchen in Kärnten'
         }
-      ],
+      ],*/
       bigLineChart: {
         activeIndex: 0,
         chartData: {
