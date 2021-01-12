@@ -5,10 +5,17 @@
     </div>
     <base-input type="=capital" label="Capital" placeholder="Capital" v-model="capital"/>
     <base-input type="risk_free_rate" label="Risk free rate" placeholder="Risk free rate" v-model="risk_free_rate"/>
+    <base-input type="broker_fees" label="Broker fees" placeholder="Broker fees" v-model="broker_fees"/>
+    <base-input type="name" label="name" placeholder="name" v-model="name"/>
     <div class="col-md-12">
       <base-dropdown title-classes="btn btn-secondary" title="Strategy">
           <a class="dropdown-item" v-bind:key="value" v-for="value in strategy_dict" @click="update_strategy(value)">
             {{ value }}
+          </a>
+      </base-dropdown>
+      <base-dropdown title-classes="btn btn-secondary" title="Method">
+          <a class="dropdown-item" v-bind:key="item" v-for="item in method_list" @click="update_method(item)">
+            {{ item }}
           </a>
       </base-dropdown>
     </div>
@@ -92,12 +99,16 @@
     data() {
       return {
         strategy_dict: {},
+        method_list: ["HRPOpt", "Historical"],
         returns_dict: {},
         risk_choice: "",
+        method_choice: "",
         short_selling: false,
         returns_choice: "",
-        risk_percentage: 0,
-        risk_free_rate: 0,
+        name: "",
+        risk_percentage: 3,
+        risk_free_rate: 0.01,
+        broker_fees: 0.01,
         final_allocation: null,
         chart_options: {
           responsive: true,
@@ -105,9 +116,10 @@
         },
         chart_data: {},
         capital: 0,
-        expected_return: 0,
         value: null,
+        expected_return: 0,
         coins_selected: null,
+        stored_coins: null,
         options: [],
         goals_list: [],
         gamma: 1,
@@ -125,6 +137,15 @@
       LineChart,
       PieChart,
     },
+    mounted() {
+      if (localStorage.getItem("stored_coins")) {
+        try {
+          this.coins_selected = JSON.parse(localStorage.getItem("stored_coins"))
+        } catch(e) {
+          localStorage.removeItem("stored_coins")
+        }
+      }
+    },
     methods: {
       update_strategy(choice) {
         this.risk_choice = choice;
@@ -132,19 +153,28 @@
       update_return(choice) {
         this.returns_choice = choice;
       },
+      update_method(choice) {
+        this.method_choice = choice;
+      },
       async start_simulation() {
         let payload = {
           "risk_choice": this.risk_choice,
+          "method_choice": this.method_choice,
           "returns_choice": this.returns_choice,
           "risk_percentage": this.risk_percentage,
           "expected_return": this.expected_return,
           "coins_selected": this.coins_selected,
           "short_selling": this.short_selling,
           "risk_free_rate": this.risk_free_rate,
+          "broker_fees": this.broker_fees,
           "capital": this.capital,
           "gamma": this.gamma,
+          "name": this.name,
         }
-        this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/input', payload);
+        if (this.method_choice == "HRPOpt")
+          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
+        else if (this.method_choice == "Historical")
+          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/historical', payload);
 
         let calculated_chartdata = {
           labels: Object.keys(this.final_allocation),
@@ -169,5 +199,7 @@
     }
   };
 </script>
-<style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
+
 <style scoped lang="scss"></style>
+
+<style src="vue-multiselect/dist/vue-multiselect.min.css"></style>

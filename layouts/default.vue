@@ -18,14 +18,14 @@
           }"
         >
         </sidebar-item>
-        <sidebar-item
+        <!--<sidebar-item
           :link="{
             name: $t('sidebar.notifications'),
             icon: 'tim-icons icon-bell-55',
             path: '/notifications'
           }"
         >
-        </sidebar-item>
+        </sidebar-item> -->
         <sidebar-item
           :link="{
             name: $t('sidebar.userProfile'),
