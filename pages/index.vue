@@ -9,6 +9,7 @@
               <h5 class="card-category">Total shipments</h5>
               <h2 class="card-title">Performance</h2>
             </div>
+            <base-button type="button" native-type="Submit" v-on:click="change(0)">Test</base-button>
             <div class="col-sm-6 d-flex d-sm-block">
               <div
                 class="btn-group btn-group-toggle"
@@ -24,7 +25,7 @@
                 >
                   <input
                     type="radio"
-                    @click="initBigChart(index)"
+                    @click="change(index)"
                     name="options"
                     autocomplete="off"
                     :checked="bigLineChart.activeIndex === index"
@@ -97,6 +98,7 @@ import { Table, TableColumn } from 'element-ui';
 
 export default {
   async fetch() {
+    console.log(this.bigChartData)
     const preferredHypothesisOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -189,13 +191,16 @@ export default {
         }],
         labels: this.bigChartLabels
       };
-      this.$refs.bigChart.updateGradients(chartData);
       this.bigLineChart.chartData = chartData;
       this.bigLineChart.activeIndex = index;
+   },
+    change (index) {
+      this.initBigChart(index);
+      this.$forceUpdate()
     }
   },
   mounted () {
-    this.initBigChart(1);
+    this.initBigChart(0);
   }
 }
 </script>
