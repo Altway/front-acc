@@ -67,7 +67,9 @@ export default {
     '@nuxtjs/pwa',
     'nuxt-i18n',
     '@nuxt/http',
-    '@nuxtjs/proxy'
+    '@nuxtjs/proxy',
+    '@nuxtjs/axios',
+    '@nuxtjs/auth-next'
   ],
   http: {
 
@@ -94,6 +96,19 @@ export default {
     lazy: true,
     langDir: 'lang/',
     defaultLocale: 'en',
+  },
+  auth: {
+    strategies: {
+      google: {
+        clientId: '601781692092-0589uerlrtj0ms315ek0b4f91uupgtvi.apps.googleusercontent.com',
+        codeChallengeMethod: '',
+        responseType: 'code',
+        endpoints: {
+          token: 'http://localhost:8000/social_login/google/',
+          userInfo: 'http://localhost:8000/auth/user/'
+        }
+      }
+    }
   },
   /*
   ** Build configuration

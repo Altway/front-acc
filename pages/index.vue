@@ -3,6 +3,7 @@
     <div class="col-12">
       <card type="chart">
         <template slot="header">
+          <base-button @click="loginClicked()">Login with Google</base-button>
           <base-input type="=id" label="hypothesis_id" placeholder="hypothesis_id" v-model="hypothesis_id"/>
           <div class="row">
             <div class="col-sm-6" :class="isRTL ? 'text-right' : 'text-left'">
@@ -85,6 +86,17 @@
         </el-table>
       </card>
     </div>
+
+  <ul>
+    <li v-for="todo in todos" :key="todo.text">
+      <input :checked="todo.done" @change="toggle(todo)" type="checkbox">
+      <span :class="{ done: todo.done }">{{ todo.text }}</span>
+    </li>
+    <li><input @keyup.enter="addTodo" placeholder="What needs to be done?"></li>
+  </ul>
+
+
+
   </div>
 </template>
 <script>
@@ -95,10 +107,11 @@ import TaskList from '@/components/Dashboard/TaskList';
 import config from '@/config';
 import { Table, TableColumn } from 'element-ui';
 
+import { mapMutations } from 'vuex'
 
 export default {
+  //middleware: ['auth'],
   async fetch() {
-    console.log(this.bigChartData)
     const preferredHypothesisOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -117,7 +130,14 @@ export default {
     var bigChartData = []
     for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
     this.bigChartData = bigChartData;
+    this.$cookies.set("cookie-name", "cookie-value", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7
+    });
+    const cookieRes = this.$cookies.get("cookie-name");
+    console.log(cookieRes);
 
+    //this.$auth.loginWith('google', { params: { another_post_key: "value" } })
     console.log("FINI LE JAVASCRIPT");
   },
   fetchOnServer: false,
@@ -158,6 +178,9 @@ export default {
     };
   },
   computed: {
+    todos () {
+      return this.$store.state.todos.list
+    },
     bigLineChart () {
       return {
         activeIndex: 0,
@@ -197,11 +220,38 @@ export default {
     change (index) {
       this.initBigChart(index);
       this.$forceUpdate()
-    }
+    },
+     addTodo (e) {
+      this.$store.commit('todos/add', e.target.value)
+      e.target.value = ''
+    },
+    ...mapMutations({
+      toggle: 'todos/toggle'
+    }),
+    consoleLog(text) {
+            if (this.log !== null) {
+                this.log += text + "\n";
+            } else {
+                this.log = text + "\n";
+            }
+        },
+        async loginClicked() {
+            try {
+                //let res = await this.$auth.loginWith('google', { params: { another_post_key: "value" } });
+                let res = await this.$auth.loginWith('google');
+                console.log("login result: " + res);
+            } catch (err) {
+                this.consoleLog("login error: " + err);
+            }
+        }
   },
   mounted () {
     this.initBigChart(0);
   }
 }
 </script>
-<style></style>
+<style>
+.done {
+  text-decoration: line-through;
+}
+</style>
