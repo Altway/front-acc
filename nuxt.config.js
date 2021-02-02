@@ -98,15 +98,43 @@ export default {
     defaultLocale: 'en',
   },
   auth: {
+    localStorage: false,
+    cookie: {
+      prefix: 'auth.',
+      options: {
+        path: '/',
+        maxAge: 10800
+      },
+      token: {
+        prefix: '_NUXTJS_token.'
+      }
+    },
     strategies: {
       google: {
         clientId: '601781692092-0589uerlrtj0ms315ek0b4f91uupgtvi.apps.googleusercontent.com',
         codeChallengeMethod: '',
         responseType: 'code',
         endpoints: {
-          token: 'http://localhost:8000/social_login/google/',
-          userInfo: 'http://localhost:8000/auth/user/'
-        }
+          //token: 'http://localhost:8000/social_login/google/',
+          token: 'http://localhost:8000/dj-rest-auth/google/',
+          //userInfo: 'http://localhost:8000/auth/user/'
+          userInfo: 'http://localhost:8000/dj-rest-auth/user/'
+        },
+        token: {
+          property: 'access_token',
+          type: 'Bearer',
+          maxAge: 1800
+        },
+        refreshToken: {
+          property: 'refresh_token',
+          maxAge: 60 * 60 * 24 * 30
+        },
+        redirect: {
+          login: '/login',
+          logout: '/',
+          callback: '/login',
+          home: '/'
+        },
       }
     }
   },

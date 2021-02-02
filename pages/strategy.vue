@@ -1,5 +1,6 @@
 <template>
   <div class="row">
+    <base-button @click="test()">Test</base-button>
     <div>
       <multiselect placeholder="Select coins" :taggable="true" :options="options" :multiple="true" :close-on-select="false" v-model="coins_selected"></multiselect>
     </div>
@@ -88,12 +89,15 @@
   import Multiselect from 'vue-multiselect'
 
   export default {
+    middleware: 'auth',
     async fetch() {
       this.strategy_dict = await fetch('http://localhost:8000/strategy/risk').then(res => res.json())
       this.returns_dict = await fetch('http://localhost:8000/strategy/returns').then(res => res.json())
       this.goals_list = await fetch('http://localhost:8000/strategy/goals').then(res => res.json())
       let r = await fetch('http://localhost:8000/strategy/coins_list').then(res => res.json())
       this.options = r.map(el=>el.symbol)
+      let t = await fetch('http://localhost:8000/strategy/snippets').then(res => res.json())
+      this.tmp = await this.$store.$auth.fetchUser()
     },
     fetchOnServer: false,
     data() {
@@ -115,6 +119,7 @@
           maintainAspectRatio: true
         },
         chart_data: {},
+        tmp:{},
         capital: 0,
         value: null,
         expected_return: 0,
@@ -147,6 +152,21 @@
       }
     },
     methods: {
+      async test() {
+        //let res = await this.$auth.loginWith('google');
+        console.log(this.$store.$auth.user);
+        console.log(this.$store.$auth)
+        console.log(this.$store.$auth.strategy.token.get())
+        console.log(this.$store.$auth.refreshToken)
+        this.$store.$auth.setUser(this.$store.$auth.user);
+        console.log(this.$store.$auth.user);
+        const bopi = {
+          method: "GET",
+          headers: { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
+        };
+        let a = await fetch('http://localhost:8000/strategy/snippets/', bopi).then(r => r.json());
+        console.log(a)
+      },
       update_strategy(choice) {
         this.risk_choice = choice;
       },
@@ -172,7 +192,8 @@
           "name": this.name,
         }
         if (this.method_choice == "HRPOpt")
-          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
+          //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
+          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/snippets/', payload);
         else if (this.method_choice == "Historical")
           this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/historical', payload);
 

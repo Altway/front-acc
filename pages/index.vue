@@ -4,6 +4,7 @@
       <card type="chart">
         <template slot="header">
           <base-button @click="loginClicked()">Login with Google</base-button>
+          <base-button @click="m()">M</base-button>
           <base-input type="=id" label="hypothesis_id" placeholder="hypothesis_id" v-model="hypothesis_id"/>
           <div class="row">
             <div class="col-sm-6" :class="isRTL ? 'text-right' : 'text-left'">
@@ -235,15 +236,17 @@ export default {
                 this.log = text + "\n";
             }
         },
-        async loginClicked() {
-            try {
-                //let res = await this.$auth.loginWith('google', { params: { another_post_key: "value" } });
-                let res = await this.$auth.loginWith('google');
-                console.log("login result: " + res);
-            } catch (err) {
-                this.consoleLog("login error: " + err);
-            }
-        }
+    async m() {
+      console.log(this.$store.$auth.user)
+    },
+    async loginClicked() {
+      try {
+        //let res = await this.$auth.loginWith('google', { params: { another_post_key: "value" } });
+        let res = await this.$auth.loginWith('google');
+      } catch (err) {
+        this.consoleLog("login error: " + err);
+      }
+    }
   },
   mounted () {
     this.initBigChart(0);
