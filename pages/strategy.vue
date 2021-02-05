@@ -89,7 +89,7 @@
   import Multiselect from 'vue-multiselect'
 
   export default {
-    middleware: 'auth',
+    //middleware: 'auth',
     async fetch() {
       this.strategy_dict = await fetch('http://localhost:8000/strategy/risk').then(res => res.json())
       this.returns_dict = await fetch('http://localhost:8000/strategy/returns').then(res => res.json())
@@ -154,18 +154,19 @@
     methods: {
       async test() {
         //let res = await this.$auth.loginWith('google');
-        console.log(this.$store.$auth.user);
+        //console.log(this.$store.$auth.user);
         console.log(this.$store.$auth)
-        console.log(this.$store.$auth.strategy.token.get())
-        console.log(this.$store.$auth.refreshToken)
+        //console.log(this.$store.$auth.strategy.token.get())
+        //console.log(this.$store.$auth.refreshToken)
         this.$store.$auth.setUser(this.$store.$auth.user);
-        console.log(this.$store.$auth.user);
+        console.log(this.$store.$auth.user.pk)
+        //console.log(this.$store.$auth.user);
         const bopi = {
           method: "GET",
           headers: { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
         };
         let a = await fetch('http://localhost:8000/strategy/snippets/', bopi).then(r => r.json());
-        console.log(a)
+        //console.log(a)
       },
       update_strategy(choice) {
         this.risk_choice = choice;
@@ -178,19 +179,24 @@
       },
       async start_simulation() {
         let payload = {
+          "name": this.name,
           "risk_choice": this.risk_choice,
+          "risk_model_id": 1,
+          "user_id": this.$store.$auth.user.pk,
+          "broker_fees": this.broker_fees,
+          "capital": this.capital,
+          "expected_returns_id": 1,
+          "expected_return": this.expected_return,
+          "risk_free_rate": this.risk_free_rate,
+          "coins_selected": this.coins_selected,
+          "short_selling": this.short_selling,
           "method_choice": this.method_choice,
           "returns_choice": this.returns_choice,
           "risk_percentage": this.risk_percentage,
-          "expected_return": this.expected_return,
-          "coins_selected": this.coins_selected,
-          "short_selling": this.short_selling,
-          "risk_free_rate": this.risk_free_rate,
-          "broker_fees": this.broker_fees,
-          "capital": this.capital,
           "gamma": this.gamma,
-          "name": this.name,
         }
+        if(!this.method_choice)
+          this.method_choice = "HRPOpt"
         if (this.method_choice == "HRPOpt")
           //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
           this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/snippets/', payload);

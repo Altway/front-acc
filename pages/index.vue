@@ -54,6 +54,7 @@
         </div>
       </card>
     </div>
+    <!--
     <div class="col-lg-7">
       <card card-body-classes="table-full-width">
         <h4 slot="header" class="card-title">Striped table</h4>
@@ -67,27 +68,19 @@
           <el-table-column
             min-width="150"
             sortable
-            label="Capital"
-            property="capital"
+            label="Allocation"
+            property="allocation"
           ></el-table-column>
           <el-table-column
             min-width="150"
             sortable
-            label="Gamma"
-            property="gamma"
-          ></el-table-column>
-          <el-table-column
-            min-width="150"
-            sortable
-            align="right"
-            header-align="right"
-            label="Method"
-            property="method"
+            label="User"
+            property="user"
           ></el-table-column>
         </el-table>
       </card>
     </div>
-
+-->
   <ul>
     <li v-for="todo in todos" :key="todo.text">
       <input :checked="todo.done" @change="toggle(todo)" type="checkbox">
@@ -116,17 +109,30 @@ export default {
     const preferredHypothesisOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: this.hypothesis_id })
+      body: JSON.stringify({ 
+        hypothesis_id: this.hypothesis_id,
+        user_id: this.$store.$auth.user.pk
+      })
     };
+    const payload = {
+        hypothesis_id: this.hypothesis_id,
+        user_id: this.$store.$auth.user.pk
+    }
+    console.log(payload)
     this.tableData = await fetch("http://localhost:8000/strategy/preferred_hypothesis", preferredHypothesisOptions).then(r => r.json());
-
+    //this.tableData = meh.allocation
+    //this.tableData = await this.$http.$post('http://localhost:8000/strategy/preferred_hypothesis/', payload);
+    console.log(this.tableData)
     const hypothesisdataOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: this.user_id })
+      body: JSON.stringify({ 
+        hypothesis_id: this.hypothesis_id,
+        user_id: this.$store.$auth.user.pk
+      })
     };
     const hypothesisData = await fetch("http://localhost:8000/strategy/hypothesis_data", hypothesisdataOptions).then(r => r.json());
-
+    console.log(hypothesisData)
     this.bigChartLabels = hypothesisData["bigChartLabels"];
     var bigChartData = []
     for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
@@ -137,7 +143,6 @@ export default {
     });
     const cookieRes = this.$cookies.get("cookie-name");
     console.log(cookieRes);
-
     //this.$auth.loginWith('google', { params: { another_post_key: "value" } })
     console.log("FINI LE JAVASCRIPT");
   },
