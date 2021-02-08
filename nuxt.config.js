@@ -124,7 +124,7 @@ export default {
         token: {
           property: 'access_token',
           type: 'Bearer',
-          maxAge: 1800
+          maxAge: 18000
         },
         refreshToken: {
           property: 'refresh_token',

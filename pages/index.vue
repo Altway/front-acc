@@ -242,6 +242,45 @@ export default {
             }
         },
     async m() {
+      const preferredHypothesisOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          hypothesis_id: this.hypothesis_id,
+          user_id: this.$store.$auth.user.pk
+        })
+      };
+      const payload = {
+          hypothesis_id: this.hypothesis_id,
+          user_id: this.$store.$auth.user.pk
+      }
+      console.log(payload)
+      this.tableData = await fetch("http://localhost:8000/strategy/preferred_hypothesis", preferredHypothesisOptions).then(r => r.json());
+      //this.tableData = meh.allocation
+      //this.tableData = await this.$http.$post('http://localhost:8000/strategy/preferred_hypothesis/', payload);
+      console.log(this.tableData)
+      const hypothesisdataOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          hypothesis_id: this.hypothesis_id,
+          user_id: this.$store.$auth.user.pk
+        })
+      };
+      const hypothesisData = await fetch("http://localhost:8000/strategy/hypothesis_data", hypothesisdataOptions).then(r => r.json());
+      console.log(hypothesisData)
+      this.bigChartLabels = hypothesisData["bigChartLabels"];
+      var bigChartData = []
+      for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
+      this.bigChartData = bigChartData;
+      this.$cookies.set("cookie-name", "cookie-value", {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7
+      });
+      const cookieRes = this.$cookies.get("cookie-name");
+      console.log(cookieRes);
+      //this.$auth.loginWith('google', { params: { another_post_key: "value" } })
+      console.log("FINI LE JAVASCRIPT");
       console.log(this.$store.$auth.user)
     },
     async loginClicked() {
