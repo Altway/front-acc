@@ -5,7 +5,7 @@
         <template slot="header">
           <base-button @click="loginClicked()">Login with Google</base-button>
           <base-button @click="m()">M</base-button>
-          <base-input type="=id" label="hypothesis_id" placeholder="hypothesis_id" v-model="hypothesis_id"/>
+          <base-input type="=id" label="hypothesis_name" placeholder="hypothesis_name" v-model="hypothesis_name"/>
           <div class="row">
             <div class="col-sm-6" :class="isRTL ? 'text-right' : 'text-left'">
               <h5 class="card-category">Total shipments</h5>
@@ -76,6 +76,28 @@
             label="User"
             property="user"
           ></el-table-column>
+          <el-table-column 
+            min-width="150"
+            header-align="right"
+            label="Actions">
+              <div slot-scope="{row}" class="text-right">
+                <el-tooltip content="Info" :open-delay="300" placement="top">
+                  <base-button type="info" size="sm" icon @click="update_chart(row)">
+                    <i class="tim-icons icon-single-02"></i>
+                  </base-button>
+                </el-tooltip>
+                <el-tooltip content="Settings" :open-delay="300" placement="top">
+                  <base-button type="success" size="sm" icon>
+                    <i class="tim-icons icon-settings"></i>
+                  </base-button>
+                </el-tooltip>
+                <el-tooltip content="Delete" :open-delay="300" placement="top">
+                  <base-button type="danger" size="sm" icon>
+                    <i class="tim-icons icon-simple-remove"></i>
+                  </base-button>
+                </el-tooltip>
+              </div>
+          </el-table-column>
         </el-table>
       </card>
     </div>
@@ -108,12 +130,12 @@ export default {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        hypothesis_id: this.hypothesis_id,
+        hypothesis_name: this.hypothesis_name,
         user_id: this.$store.$auth.user.pk
       })
     };
     const payload = {
-        hypothesis_id: this.hypothesis_id,
+        hypothesis_name: this.hypothesis_name,
         user_id: this.$store.$auth.user.pk
     }
     this.tableData = await fetch("http://localhost:8000/strategy/preferred_hypothesis", preferredHypothesisOptions).then(r => r.json());
@@ -124,7 +146,7 @@ export default {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        hypothesis_id: this.hypothesis_id,
+        hypothesis_name: this.hypothesis_name,
         user_id: this.$store.$auth.user.pk
       })
     };
@@ -165,12 +187,12 @@ export default {
       bigChartData: {},
       bigChartLabels: [],
       hypothesisList: [],
-      hypothesis_id: 1,
+      hypothesis_name: "wxc",
       user_id: 1,
       bigLineChartCategories: [
-        {name: 'mimimim', icon: 'tim-icons icon-single-02'}, 
-        {name: 'Truc', icon: 'tim-icons icon-gift-2'},
-        {name: 'Mich', icon: 'tim-icons icon-tap-02'}
+        {name: 'simple', icon: 'tim-icons icon-single-02'}, 
+        {name: 'cumsum', icon: 'tim-icons icon-gift-2'},
+        {name: 'pct', icon: 'tim-icons icon-tap-02'}
       ],
       bigChartDatasetOptions: {
         fill: true,
@@ -200,10 +222,6 @@ export default {
             {
               ...this.bigChartDatasetOptions,
               data: this.bigChartData[0]
-            },
-            {
-              ...this.bigChartDatasetOptions,
-              data: this.bigChartData[1]
             }
           ],
           labels: this.bigChartLabels
@@ -228,9 +246,6 @@ export default {
         datasets: [{
           ...this.bigChartDatasetOptions,
           data: this.bigChartData[index]
-        },{
-          ...this.bigChartDatasetOptions,
-          data: this.bigChartData[index+1]
         }],
         labels: this.bigChartLabels
       };
@@ -254,7 +269,23 @@ export default {
             } else {
                 this.log = text + "\n";
             }
-        },
+    },
+    async update_chart(row) {
+      const hypothesisChangedataOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          hypothesis_name: row.name,
+          user_id: this.$store.$auth.user.pk
+        })
+      };
+      const hypothesisData = await fetch("http://localhost:8000/strategy/hypothesis_data", hypothesisChangedataOptions).then(r => r.json());
+      this.bigChartLabels = hypothesisData["bigChartLabels"];
+      var bigChartData = []
+      for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
+      this.bigChartData = bigChartData;
+      console.log(row.name)
+    },
     async m() {
       const preferredHypothesisOptions = {
         method: "POST",
@@ -265,7 +296,7 @@ export default {
         })
       };
       const payload = {
-          hypothesis_id: this.hypothesis_id,
+          hypothesis_name: this.hypothesis_name,
           user_id: this.$store.$auth.user.pk
       }
       console.log(payload)
@@ -277,7 +308,7 @@ export default {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          hypothesis_id: this.hypothesis_id,
+          hypothesis_name: this.hypothesis_name,
           user_id: this.$store.$auth.user.pk
         })
       };
