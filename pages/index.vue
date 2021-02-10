@@ -54,11 +54,10 @@
         </div>
       </card>
     </div>
-    <!--
     <div class="col-lg-7">
       <card card-body-classes="table-full-width">
         <h4 slot="header" class="card-title">Striped table</h4>
-        <el-table :data="tableData">
+        <el-table :data="this.hypothesisList">
           <el-table-column
             min-width="150"
             sortable
@@ -80,7 +79,6 @@
         </el-table>
       </card>
     </div>
--->
   <ul>
     <li v-for="todo in todos" :key="todo.text">
       <input :checked="todo.done" @change="toggle(todo)" type="checkbox">
@@ -118,7 +116,6 @@ export default {
         hypothesis_id: this.hypothesis_id,
         user_id: this.$store.$auth.user.pk
     }
-    console.log(payload)
     this.tableData = await fetch("http://localhost:8000/strategy/preferred_hypothesis", preferredHypothesisOptions).then(r => r.json());
     //this.tableData = meh.allocation
     //this.tableData = await this.$http.$post('http://localhost:8000/strategy/preferred_hypothesis/', payload);
@@ -137,6 +134,13 @@ export default {
     var bigChartData = []
     for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
     this.bigChartData = bigChartData;
+    const hypothesisListOptions = {
+      method: "GET",
+      headers: { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
+    };
+   // const hypothesisList = await fetch("http://localhost:8000/strategy/hypothesis/1/", hypothesisListOptions).then(r => r.json());
+    this.hypothesisList = await fetch('http://localhost:8000/strategy/users/2/hypothesis', hypothesisListOptions).then(res => res.json())
+    console.log(this.hypothesisList)
     this.$cookies.set("cookie-name", "cookie-value", {
       path: "/",
       maxAge: 60 * 60 * 24 * 7
@@ -160,6 +164,7 @@ export default {
       tableData: [],
       bigChartData: {},
       bigChartLabels: [],
+      hypothesisList: [],
       hypothesis_id: 1,
       user_id: 1,
       bigLineChartCategories: [
@@ -191,10 +196,16 @@ export default {
       return {
         activeIndex: 0,
         chartData: {
-          datasets: [{
-            ...this.bigChartDatasetOptions,
-            data: this.bigChartData[0]
-          }],
+          datasets: [
+            {
+              ...this.bigChartDatasetOptions,
+              data: this.bigChartData[0]
+            },
+            {
+              ...this.bigChartDatasetOptions,
+              data: this.bigChartData[1]
+            }
+          ],
           labels: this.bigChartLabels
         },
         extraOptions: chartConfigs.purpleChartOptions,
@@ -217,6 +228,9 @@ export default {
         datasets: [{
           ...this.bigChartDatasetOptions,
           data: this.bigChartData[index]
+        },{
+          ...this.bigChartDatasetOptions,
+          data: this.bigChartData[index+1]
         }],
         labels: this.bigChartLabels
       };
