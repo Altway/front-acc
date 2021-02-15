@@ -38,6 +38,7 @@ module.exports = {
     "charts": "Charts",
     "calendar": "Calendar",
     "strategy": "Strategy",
-    "about": "About"
+    "about": "About",
+    "video": "Video"
   }
 }
