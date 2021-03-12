@@ -201,7 +201,7 @@
           //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
           this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/snippets/', payload);
         else if (this.method_choice == "Historical")
-          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/historical', payload);
+          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/historical/', payload);
 
         let calculated_chartdata = {
           labels: Object.keys(this.final_allocation),
