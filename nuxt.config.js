@@ -34,7 +34,8 @@ export default {
     }
   },
   router: {
-    linkExactActiveClass: 'active'
+    linkExactActiveClass: 'active',
+    middleware: ["auth", "healthcheck"]
   },
   /*
   ** Customize the progress-bar color
@@ -138,6 +139,11 @@ export default {
           home: '/'
         },
       }
+    },
+    env: {
+      mescouilles: process.env.MESCOUILLES || 'petites couilles',
+      dev: process.env.NODE_ENV !== 'production',
+      baseUrl: process.env.BASE_URL || 'localhost:8000'
     }
   },
   /*

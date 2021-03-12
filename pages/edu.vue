@@ -84,6 +84,7 @@ export default {
       //this.userData = await fetch(`http://localhost:8000/personnal/user/${id}`).then(res => res.json())
       //console.log(this.userData)
       console.log("ICICICICI")
+      console.log(Vue.version)
     }
   },
   mounted() {

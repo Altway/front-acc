@@ -3,19 +3,14 @@
     <div class="col-12">
       <card type="chart">
         <template slot="header">
-          <base-button @click="loginClicked()">Login with Google</base-button>
-          <base-button @click="m()">M</base-button>
-          <base-input type="=id" label="hypothesis_name" placeholder="hypothesis_name" v-model="hypothesis_name"/>
           <div class="row">
-            <div class="col-sm-6" :class="isRTL ? 'text-right' : 'text-left'">
-              <h5 class="card-category">Total shipments</h5>
+            <div class="col-sm-6">
+              <h5 class="card-category">Portefolio Value</h5>
               <h2 class="card-title">Performance</h2>
             </div>
-            <base-button type="button" native-type="Submit" v-on:click="change(0)">Test</base-button>
             <div class="col-sm-6 d-flex d-sm-block">
               <div
                 class="btn-group btn-group-toggle"
-                :class="isRTL ? 'float-left' : 'float-right'"
                 data-toggle="buttons"
               >
                 <label
@@ -56,25 +51,19 @@
     </div>
     <div class="col-lg-7">
       <card card-body-classes="table-full-width">
-        <h4 slot="header" class="card-title">Striped table</h4>
+        <h4 slot="header" class="card-title">Saved Hypothesis</h4>
         <el-table :data="this.hypothesisList">
           <el-table-column
             min-width="150"
             sortable
-            label="Name"
+            label="Hypothesis name"
             property="name"
           ></el-table-column>
           <el-table-column
             min-width="150"
             sortable
-            label="Allocation"
+            label="Assets Allocation"
             property="allocation"
-          ></el-table-column>
-          <el-table-column
-            min-width="150"
-            sortable
-            label="User"
-            property="user"
           ></el-table-column>
           <el-table-column 
             min-width="150"
@@ -101,16 +90,6 @@
         </el-table>
       </card>
     </div>
-  <ul>
-    <li v-for="todo in todos" :key="todo.text">
-      <input :checked="todo.done" @change="toggle(todo)" type="checkbox">
-      <span :class="{ done: todo.done }">{{ todo.text }}</span>
-    </li>
-    <li><input @keyup.enter="addTodo" placeholder="What needs to be done?"></li>
-  </ul>
-
-
-
   </div>
 </template>
 <script>
@@ -121,56 +100,52 @@ import TaskList from '@/components/Dashboard/TaskList';
 import config from '@/config';
 import { Table, TableColumn } from 'element-ui';
 
+import { GET, POST } from '@/util/request.js';
+
 import { mapMutations } from 'vuex'
 
 export default {
-  //middleware: ['auth'],
   async fetch() {
-    const preferredHypothesisOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        hypothesis_name: this.hypothesis_name,
-        user_id: this.$store.$auth.user.pk
-      })
-    };
-    const payload = {
-        hypothesis_name: this.hypothesis_name,
-        user_id: this.$store.$auth.user.pk
-    }
-    this.tableData = await fetch("http://localhost:8000/strategy/preferred_hypothesis", preferredHypothesisOptions).then(r => r.json());
-    //this.tableData = meh.allocation
-    //this.tableData = await this.$http.$post('http://localhost:8000/strategy/preferred_hypothesis/', payload);
-    console.log(this.tableData)
-    const hypothesisdataOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        hypothesis_name: this.hypothesis_name,
-        user_id: this.$store.$auth.user.pk
-      })
-    };
-    const hypothesisData = await fetch("http://localhost:8000/strategy/hypothesis_data", hypothesisdataOptions).then(r => r.json());
-    console.log(hypothesisData)
+    console.log("FETCH DEBUG START")
+
+    // Query the user's preferred hypothesis
+    const preferredHypothethis = await POST(
+      "http://localhost:8000/strategy/preferred_hypothesis",
+      {"Content-Type": "application/json"},
+      {hypothesis_name: this.hypothesis_name, user_id: this.$store.$auth.user.pk}
+    );
+    this.tableData = preferredHypothethis.allocation
+
+    // Query the hypothesis data
+    const hypothesisData = await POST(
+      "http://localhost:8000/strategy/hypothesis_data", 
+      {"Content-Type": "application/json"},
+      {hypothesis_name: this.hypothesis_name, user_id: this.$store.$auth.user.pk}
+    );
     this.bigChartLabels = hypothesisData["bigChartLabels"];
-    var bigChartData = []
+
+    // For each different mathematical calculation we populate the graph
+    let bigChartData = []
     for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
     this.bigChartData = bigChartData;
-    const hypothesisListOptions = {
-      method: "GET",
-      headers: { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
-    };
-   // const hypothesisList = await fetch("http://localhost:8000/strategy/hypothesis/1/", hypothesisListOptions).then(r => r.json());
-    this.hypothesisList = await fetch('http://localhost:8000/strategy/users/2/hypothesis', hypothesisListOptions).then(res => res.json())
-    console.log(this.hypothesisList)
+
+    // We query a specific hypothesis to display in the graph
+    const hypothesisList = await GET(
+      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis",
+      {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
+    );
+    console.log(hypothesisList)
+    this.hypothesisList = hypothesisList
+   
+    /* Snippet pour les Cookies
     this.$cookies.set("cookie-name", "cookie-value", {
       path: "/",
       maxAge: 60 * 60 * 24 * 7
     });
     const cookieRes = this.$cookies.get("cookie-name");
-    console.log(cookieRes);
-    //this.$auth.loginWith('google', { params: { another_post_key: "value" } })
-    console.log("FINI LE JAVASCRIPT");
+    console.log(cookieRes);*/
+
+    console.log("FETCH DEBUG END")
   },
   fetchOnServer: false,
   name: 'dashboard',
@@ -188,7 +163,6 @@ export default {
       bigChartLabels: [],
       hypothesisList: [],
       hypothesis_name: "wxc",
-      user_id: 1,
       bigLineChartCategories: [
         {name: 'simple', icon: 'tim-icons icon-single-02'}, 
         {name: 'cumsum', icon: 'tim-icons icon-gift-2'},
@@ -211,9 +185,6 @@ export default {
     };
   },
   computed: {
-    todos () {
-      return this.$store.state.todos.list
-    },
     bigLineChart () {
       return {
         activeIndex: 0,
@@ -232,13 +203,6 @@ export default {
         categories: this.bigLineChartCategories
       };
     },
-    enableRTL () {
-      // Right-To-Left pour les langues qui se lisent à l'envers
-      return this.$route.query.enableRTL;
-    },
-    isRTL () {
-      return this.$rtl.isRTL;
-    },
   },
   methods: {
     initBigChart (index) {
@@ -255,20 +219,6 @@ export default {
     change (index) {
       this.initBigChart(index);
       this.$forceUpdate()
-    },
-     addTodo (e) {
-      this.$store.commit('todos/add', e.target.value)
-      e.target.value = ''
-    },
-    ...mapMutations({
-      toggle: 'todos/toggle'
-    }),
-    consoleLog(text) {
-            if (this.log !== null) {
-                this.log += text + "\n";
-            } else {
-                this.log = text + "\n";
-            }
     },
     async update_chart(row) {
       const hypothesisChangedataOptions = {
@@ -318,24 +268,8 @@ export default {
       var bigChartData = []
       for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
       this.bigChartData = bigChartData;
-      this.$cookies.set("cookie-name", "cookie-value", {
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7
-      });
-      const cookieRes = this.$cookies.get("cookie-name");
-      console.log(cookieRes);
-      //this.$auth.loginWith('google', { params: { another_post_key: "value" } })
-      console.log("FINI LE JAVASCRIPT");
       console.log(this.$store.$auth.user)
     },
-    async loginClicked() {
-      try {
-        //let res = await this.$auth.loginWith('google', { params: { another_post_key: "value" } });
-        let res = await this.$auth.loginWith('google');
-      } catch (err) {
-        this.consoleLog("login error: " + err);
-      }
-    }
   },
   mounted () {
     this.initBigChart(0);
