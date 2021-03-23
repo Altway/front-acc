@@ -88,25 +88,26 @@
   import {BaseDropdown, LineChart, PieChart} from '@/components'
   import Multiselect from 'vue-multiselect'
 
+  import { GET, POST } from '@/util/request.js';
+
   export default {
-    //middleware: 'auth',
+    middleware: 'auth',
+    fetchOnServer: false,
     async fetch() {
-      this.strategy_dict = await fetch('http://localhost:8000/strategy/risk').then(res => res.json())
-      this.returns_dict = await fetch('http://localhost:8000/strategy/returns').then(res => res.json())
-      this.goals_list = await fetch('http://localhost:8000/strategy/goals').then(res => res.json())
-      let r = await fetch('http://localhost:8000/strategy/coins_list').then(res => res.json())
+      this.strategy_dict = await GET('http://localhost:8000/strategy/risk')
+      this.returns_dict = await GET('http://localhost:8000/strategy/returns')
+      this.goals_list = await GET('http://localhost:8000/strategy/goals')
+      let r = await GET('http://localhost:8000/strategy/coins_list')
       this.options = r.map(el=>el.symbol)
-      let t = await fetch('http://localhost:8000/strategy/snippets').then(res => res.json())
       this.tmp = await this.$store.$auth.fetchUser()
     },
-    fetchOnServer: false,
     data() {
       return {
         strategy_dict: {},
         method_list: ["HRPOpt", "Historical"],
         returns_dict: {},
         risk_choice: "",
-        method_choice: "",
+        method_choice: "Historical",
         short_selling: false,
         returns_choice: "",
         name: "",
@@ -153,20 +154,14 @@
     },
     methods: {
       async test() {
-        //let res = await this.$auth.loginWith('google');
-        //console.log(this.$store.$auth.user);
-        console.log(this.$store.$auth)
-        //console.log(this.$store.$auth.strategy.token.get())
-        //console.log(this.$store.$auth.refreshToken)
         this.$store.$auth.setUser(this.$store.$auth.user);
+        console.log(this.$store.$auth)
         console.log(this.$store.$auth.user.pk)
-        //console.log(this.$store.$auth.user);
-        const bopi = {
-          method: "GET",
-          headers: { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
-        };
-        let a = await fetch('http://localhost:8000/strategy/snippets/', bopi).then(r => r.json());
-        //console.log(a)
+        let resp = await GET(
+          'http://localhost:8000/strategy/hropt/', 
+          { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
+        );
+        console.log(resp)
       },
       update_strategy(choice) {
         this.risk_choice = choice;
@@ -195,15 +190,18 @@
           "risk_percentage": this.risk_percentage,
           "gamma": this.gamma,
         }
-        if(!this.method_choice)
-          this.method_choice = "HRPOpt"
-        if (this.method_choice == "HRPOpt")
-          //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
-          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/snippets/', payload);
-        else if (this.method_choice == "Historical")
-          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/historical/', payload);
+        switch(this.method_choice) {
+          case "HRPOpt":
+            this.final_allocation = await POST('http://localhost:8000/strategy/hropt/', {}, payload);
+            break;
+          case "Historical":
+            this.final_allocation = await POST('http://localhost:8000/strategy/historical/', {}, payload);
+            break;
+          default:
+            console.log("Default case");
+        }
 
-        let calculated_chartdata = {
+        this.chart_data = {
           labels: Object.keys(this.final_allocation),
           datasets: [{
             label: 'Allocation',
@@ -211,17 +209,6 @@
             data: Object.values(this.final_allocation)
           }]
         }
-        this.chart_data = calculated_chartdata;
-        //const truc = await this.$http.$post('http://localhost:8000/strategy/input', payload);
-        //const r = await truc.text()
-
-        //this.final_allocation = tru.map(el=>el.symbol)
-      
-        //this.final_allocation  = await this.$http.$post('http://localhost:8000/strategy/input', payload).then(res => json());
-        //const truc = await res.json()
-        //console.log(truc)
-        //return truc
-        //this.final_allocation = data.json()
       },
     }
   };

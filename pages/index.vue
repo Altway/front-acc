@@ -109,18 +109,34 @@ export default {
     console.log("FETCH DEBUG START")
 
     // Query the user's preferred hypothesis
-    const preferredHypothethis = await POST(
-      "http://localhost:8000/strategy/preferred_hypothesis",
+    let user_preferred_hypothesis_id
+
+    const cookiePreferredHypothesis = this.$cookies.get("preferred-hypothesis")
+    if (cookiePreferredHypothesis != null) {
+      user_preferred_hypothesis_id = cookiePreferredHypothesis
+    }else{
+      const userMetadata = await GET(
+        "http://localhost:8000/personnal/users/"+this.$store.$auth.user.pk+"/usermeta",
+        {"Content-Type": "application/json"},
+      );
+      user_preferred_hypothesis_id = userMetadata["preferred_hypothesis_id"]
+      this.$cookies.set("preferred-hypothesis", user_preferred_hypothesis_id, {
+        path: "/",
+        maxAge: 7 * 24
+      });
+    }
+
+    const userPreferredHypothesis= await GET(
+      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id,
       {"Content-Type": "application/json"},
-      {hypothesis_name: this.hypothesis_name, user_id: this.$store.$auth.user.pk}
     );
-    this.tableData = preferredHypothethis.allocation
+    this.tableData = userPreferredHypothesis.allocation
 
     // Query the hypothesis data
     const hypothesisData = await POST(
       "http://localhost:8000/strategy/hypothesis_data", 
       {"Content-Type": "application/json"},
-      {hypothesis_name: this.hypothesis_name, user_id: this.$store.$auth.user.pk}
+      {hypothesis_name: userPreferredHypothesis.name, user_id: this.$store.$auth.user.pk}
     );
     this.bigChartLabels = hypothesisData["bigChartLabels"];
 
@@ -134,7 +150,6 @@ export default {
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis",
       {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
     );
-    console.log(hypothesisList)
     this.hypothesisList = hypothesisList
    
     /* Snippet pour les Cookies
@@ -162,7 +177,7 @@ export default {
       bigChartData: {},
       bigChartLabels: [],
       hypothesisList: [],
-      hypothesis_name: "wxc",
+      hypothesis_name: "",
       bigLineChartCategories: [
         {name: 'simple', icon: 'tim-icons icon-single-02'}, 
         {name: 'cumsum', icon: 'tim-icons icon-gift-2'},
@@ -215,60 +230,28 @@ export default {
       };
       this.bigLineChart.chartData = chartData;
       this.bigLineChart.activeIndex = index;
-   },
+    },
     change (index) {
       this.initBigChart(index);
       this.$forceUpdate()
     },
     async update_chart(row) {
-      const hypothesisChangedataOptions = {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          hypothesis_name: row.name,
-          user_id: this.$store.$auth.user.pk
-        })
-      };
-      const hypothesisData = await fetch("http://localhost:8000/strategy/hypothesis_data", hypothesisChangedataOptions).then(r => r.json());
+      const hypothesisData = await POST(
+        "http://localhost:8000/strategy/hypothesis_data", 
+        {"Content-Type": "application/json"},
+        {hypothesis_name: row.name, user_id: this.$store.$auth.user.pk}
+      )
       this.bigChartLabels = hypothesisData["bigChartLabels"];
+
       var bigChartData = []
       for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
       this.bigChartData = bigChartData;
-      console.log(row.name)
-    },
-    async m() {
-      const preferredHypothesisOptions = {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          hypothesis_id: this.hypothesis_id,
-          user_id: this.$store.$auth.user.pk
-        })
-      };
-      const payload = {
-          hypothesis_name: this.hypothesis_name,
-          user_id: this.$store.$auth.user.pk
-      }
-      console.log(payload)
-      this.tableData = await fetch("http://localhost:8000/strategy/preferred_hypothesis", preferredHypothesisOptions).then(r => r.json());
-      //this.tableData = meh.allocation
-      //this.tableData = await this.$http.$post('http://localhost:8000/strategy/preferred_hypothesis/', payload);
-      console.log(this.tableData)
-      const hypothesisdataOptions = {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          hypothesis_name: this.hypothesis_name,
-          user_id: this.$store.$auth.user.pk
-        })
-      };
-      const hypothesisData = await fetch("http://localhost:8000/strategy/hypothesis_data", hypothesisdataOptions).then(r => r.json());
-      console.log(hypothesisData)
-      this.bigChartLabels = hypothesisData["bigChartLabels"];
-      var bigChartData = []
-      for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
-      this.bigChartData = bigChartData;
-      console.log(this.$store.$auth.user)
+
+      this.$cookies.set("preferred-hypothesis", "row", {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7
+      });
+      console.log(cookieRes);
     },
   },
   mounted () {
