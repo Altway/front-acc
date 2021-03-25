@@ -106,8 +106,6 @@ import { mapMutations } from 'vuex'
 
 export default {
   async fetch() {
-    console.log("FETCH DEBUG START")
-
     // Query the user's preferred hypothesis
     let user_preferred_hypothesis_id
 
@@ -117,7 +115,6 @@ export default {
     }else{
       const userMetadata = await GET(
         "http://localhost:8000/personnal/users/"+this.$store.$auth.user.pk+"/usermeta",
-        {"Content-Type": "application/json"},
       );
       user_preferred_hypothesis_id = userMetadata["preferred_hypothesis_id"]
       this.$cookies.set("preferred-hypothesis", user_preferred_hypothesis_id, {
@@ -128,29 +125,30 @@ export default {
 
     const userPreferredHypothesis= await GET(
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id,
-      {"Content-Type": "application/json"},
     );
     this.tableData = userPreferredHypothesis.allocation
 
     // Query the hypothesis data
-    const hypothesisData = await POST(
-      "http://localhost:8000/strategy/hypothesis_data", 
-      {"Content-Type": "application/json"},
-      {hypothesis_name: userPreferredHypothesis.name, user_id: this.$store.$auth.user.pk}
+    const hypothesisData = await GET(
+      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id+"/hypothesis_data",
     );
+    console.log(hypothesisData)
     this.bigChartLabels = hypothesisData["bigChartLabels"];
+    console.log(this.bigChartLabels)
 
     // For each different mathematical calculation we populate the graph
     let bigChartData = []
     for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
     this.bigChartData = bigChartData;
+    console.log(this.bigChartData)
 
     // We query a specific hypothesis to display in the graph
+    // {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
     const hypothesisList = await GET(
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis",
-      {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
     );
     this.hypothesisList = hypothesisList
+    console.log(this.hypothesisList)
    
     /* Snippet pour les Cookies
     this.$cookies.set("cookie-name", "cookie-value", {
@@ -159,8 +157,6 @@ export default {
     });
     const cookieRes = this.$cookies.get("cookie-name");
     console.log(cookieRes);*/
-
-    console.log("FETCH DEBUG END")
   },
   fetchOnServer: false,
   name: 'dashboard',
@@ -236,22 +232,19 @@ export default {
       this.$forceUpdate()
     },
     async update_chart(row) {
-      const hypothesisData = await POST(
-        "http://localhost:8000/strategy/hypothesis_data", 
-        {"Content-Type": "application/json"},
-        {hypothesis_name: row.name, user_id: this.$store.$auth.user.pk}
-      )
+      const hypothesisData = await GET(
+        "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+row.id+"/hypothesis_data",
+      );
       this.bigChartLabels = hypothesisData["bigChartLabels"];
 
       var bigChartData = []
       for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
       this.bigChartData = bigChartData;
 
-      this.$cookies.set("preferred-hypothesis", "row", {
+      this.$cookies.set("preferred-hypothesis", row.id, {
         path: "/",
-        maxAge: 60 * 60 * 24 * 7
+        maxAge: 24 * 7
       });
-      console.log(cookieRes);
     },
   },
   mounted () {
