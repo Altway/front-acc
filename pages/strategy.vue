@@ -97,8 +97,8 @@
       this.strategy_dict = await GET('http://localhost:8000/strategy/risk')
       this.returns_dict = await GET('http://localhost:8000/strategy/returns')
       this.goals_list = await GET('http://localhost:8000/strategy/goals')
-      let r = await GET('http://localhost:8000/strategy/coins_list')
-      this.options = r.map(el=>el.symbol)
+      let coins_list = await GET('http://localhost:8000/strategy/coins_list')
+      this.options = coins_list.map(el=>el.symbol)
       this.tmp = await this.$store.$auth.fetchUser()
     },
     data() {
@@ -153,16 +153,6 @@
       }
     },
     methods: {
-      async test() {
-        this.$store.$auth.setUser(this.$store.$auth.user);
-        console.log(this.$store.$auth)
-        console.log(this.$store.$auth.user.pk)
-        let resp = await GET(
-          'http://localhost:8000/strategy/hropt/', 
-          { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
-        );
-        console.log(resp)
-      },
       update_strategy(choice) {
         this.risk_choice = choice;
       },
@@ -177,7 +167,6 @@
           "name": this.name,
           "risk_choice": this.risk_choice,
           "risk_model_id": 1,
-          "user_id": this.$store.$auth.user.pk,
           "broker_fees": this.broker_fees,
           "capital": this.capital,
           "expected_returns_id": 1,
@@ -192,10 +181,10 @@
         }
         switch(this.method_choice) {
           case "HRPOpt":
-            this.final_allocation = await POST('http://localhost:8000/strategy/hropt/', {}, payload);
+            this.final_allocation = await POST("http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hierarchical/",{}, payload);
             break;
           case "Historical":
-            this.final_allocation = await POST('http://localhost:8000/strategy/historical/', {}, payload);
+            this.final_allocation = await POST("http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/historical/",{}, payload);
             break;
           default:
             console.log("Default case");

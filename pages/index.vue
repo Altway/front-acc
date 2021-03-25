@@ -132,15 +132,12 @@ export default {
     const hypothesisData = await GET(
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id+"/hypothesis_data",
     );
-    console.log(hypothesisData)
     this.bigChartLabels = hypothesisData["bigChartLabels"];
-    console.log(this.bigChartLabels)
 
     // For each different mathematical calculation we populate the graph
     let bigChartData = []
     for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
     this.bigChartData = bigChartData;
-    console.log(this.bigChartData)
 
     // We query a specific hypothesis to display in the graph
     // {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
@@ -148,7 +145,6 @@ export default {
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis",
     );
     this.hypothesisList = hypothesisList
-    console.log(this.hypothesisList)
    
     /* Snippet pour les Cookies
     this.$cookies.set("cookie-name", "cookie-value", {
