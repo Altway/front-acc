@@ -1,29 +1,40 @@
 <template>
+
   <div class="row">
     <base-button @click="test()">Test</base-button>
-    <div>
-      <multiselect placeholder="Select coins" :taggable="true" :options="options" :multiple="true" :close-on-select="false" v-model="coins_selected"></multiselect>
-    </div>
-    <base-input type="=capital" label="Capital" placeholder="Capital" v-model="capital"/>
-    <base-input type="risk_free_rate" label="Risk free rate" placeholder="Risk free rate" v-model="risk_free_rate"/>
-    <base-input type="broker_fees" label="Broker fees" placeholder="Broker fees" v-model="broker_fees"/>
-    <base-input type="name" label="name" placeholder="name" v-model="name"/>
-    <div class="col-md-12">
-      <base-dropdown title-classes="btn btn-secondary" title="Strategy">
+    
+    <card>
+      <form @submit.prevent>
+        <multiselect 
+          placeholder="Select coins" 
+          :taggable="true" 
+          :options="options" 
+          :multiple="true" 
+          :close-on-select="false" 
+          v-model="tickers_selected">
+        </multiselect>
+    
+        <base-input type="=capital" label="Capital" placeholder="Capital" v-model="capital"/>
+        <base-input type="risk_free_rate" label="Risk free rate" placeholder="Risk free rate" v-model="risk_free_rate"/>
+        <base-input type="broker_fees" label="Broker fees" placeholder="Broker fees" v-model="broker_fees"/>
+        <base-input type="name" label="name" placeholder="name" v-model="name"/>
+    
+        <base-dropdown title-classes="btn btn-secondary" title="Strategy">
           <a class="dropdown-item" v-bind:key="value" v-for="value in strategy_dict" @click="update_strategy(value)">
             {{ value }}
           </a>
-      </base-dropdown>
-      <base-dropdown title-classes="btn btn-secondary" title="Method">
+        </base-dropdown>
+        {{ this.risk_choice }}
+        <base-dropdown title-classes="btn btn-secondary" title="Method">
           <a class="dropdown-item" v-bind:key="item" v-for="item in method_list" @click="update_method(item)">
             {{ item }}
           </a>
-      </base-dropdown>
-    </div>
-    <div class="col-md-12">
-      {{ this.risk_choice }}
-    </div>
+        </base-dropdown>
+        {{ this.method_choice }}
 
+      </form>
+    </card>
+    
     <div class="col-md-12">
       <card>
         <form @submit.prevent>
@@ -69,21 +80,18 @@
         </base-input>
         
         <base-button type="button" native-type="Submit" v-on:click="start_simulation()">Start Simulation</base-button>
-        </form>
-    <div class="col-md-12">
-      <card>
-        <div>{{ final_allocation }}</div>
-        <!--<div><client-only><RandomChart/></client-only></div>-->
-        <div>
-          <!-- <LineChart :chartData="chart_data"/> -->
-          <PieChart :chartData="chart_data"/>
-        </div>
-      </card>
+      </form>
+    </card>
     </div>
-      </card>
+
+    <div class="col-md-12">
+      <div>{{ final_allocation }}</div>
+      <!--<div><client-only><RandomChart/></client-only></div>-->
+      <div><PieChart :chartData="chart_data"/></div>
     </div>
   </div>
 </template>
+
 <script>
   import {BaseDropdown, LineChart, PieChart} from '@/components'
   import Multiselect from 'vue-multiselect'
@@ -97,8 +105,8 @@
       this.strategy_dict = await GET('http://localhost:8000/strategy/risk')
       this.returns_dict = await GET('http://localhost:8000/strategy/returns')
       this.goals_list = await GET('http://localhost:8000/strategy/goals')
-      let coins_list = await GET('http://localhost:8000/strategy/coins_list')
-      this.options = coins_list.map(el=>el.symbol)
+      let tickers_list = await GET('http://localhost:8000/strategy/coins_list')
+      this.options = tickers_list.map(el=>el.symbol)
       this.tmp = await this.$store.$auth.fetchUser()
     },
     data() {
@@ -106,7 +114,7 @@
         strategy_dict: {},
         method_list: ["HRPOpt", "Historical"],
         returns_dict: {},
-        risk_choice: "",
+        risk_choice: "sample covariance",
         method_choice: "Historical",
         short_selling: false,
         returns_choice: "",
@@ -124,7 +132,7 @@
         capital: 0,
         value: null,
         expected_return: 0,
-        coins_selected: null,
+        tickers_selected: null,
         stored_coins: null,
         options: [],
         goals_list: [],
@@ -168,11 +176,9 @@
           "risk_choice": this.risk_choice,
           "risk_model_id": 1,
           "broker_fees": this.broker_fees,
-          "capital": this.capital,
-          "expected_returns_id": 1,
-          "expected_return": this.expected_return,
+          "capital": parseFloat(this.capital),
           "risk_free_rate": this.risk_free_rate,
-          "coins_selected": this.coins_selected,
+          "tickers_selected": JSON.stringify(this.tickers_selected),
           "short_selling": this.short_selling,
           "method_choice": this.method_choice,
           "returns_choice": this.returns_choice,
@@ -181,21 +187,26 @@
         }
         switch(this.method_choice) {
           case "HRPOpt":
-            this.final_allocation = await POST("http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hierarchical/",{}, payload);
+            this.response = await POST("http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hierarchical/",{"Content-type": "application/json"}, payload);
             break;
           case "Historical":
-            this.final_allocation = await POST("http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/historical/",{}, payload);
+            this.response = await POST("http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/historical/",{"Content-type": "application/json"}, payload);
             break;
           default:
             console.log("Default case");
         }
 
+        const userPreferredHypothesis= await GET(
+          "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+this.response.hypothesis_id,
+        );
+        userPreferredHypothesis.allocation = JSON.parse(userPreferredHypothesis.allocation)
+    
         this.chart_data = {
-          labels: Object.keys(this.final_allocation),
+          labels: Object.keys(userPreferredHypothesis.allocation),
           datasets: [{
             label: 'Allocation',
             backgroundColor: ['#00c09d', '#e2e2e2'],
-            data: Object.values(this.final_allocation)
+            data: Object.values(userPreferredHypothesis.allocation),
           }]
         }
       },
