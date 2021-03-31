@@ -76,12 +76,12 @@
                   </base-button>
                 </el-tooltip>
                 <el-tooltip content="Settings" :open-delay="300" placement="top">
-                  <base-button type="success" size="sm" icon>
+                  <base-button type="success" size="sm" icon @click="set_preferred(row)">
                     <i class="tim-icons icon-settings"></i>
                   </base-button>
                 </el-tooltip>
                 <el-tooltip content="Delete" :open-delay="300" placement="top">
-                  <base-button type="danger" size="sm" icon>
+                  <base-button type="danger" size="sm" icon @click="remove_chart(row)">
                     <i class="tim-icons icon-simple-remove"></i>
                   </base-button>
                 </el-tooltip>
@@ -100,29 +100,25 @@ import TaskList from '@/components/Dashboard/TaskList';
 import config from '@/config';
 import { Table, TableColumn } from 'element-ui';
 
-import { GET, POST } from '@/util/request.js';
+import { GET, POST, DELETE, PATCH , PUT} from '@/util/request.js';
 
 import { mapMutations } from 'vuex'
 
 export default {
   async fetch() {
     // Query the user's preferred hypothesis
-    let user_preferred_hypothesis_id
 
-    const cookiePreferredHypothesis = this.$cookies.get("preferred-hypothesis")
-    if (cookiePreferredHypothesis != null) {
-      user_preferred_hypothesis_id = cookiePreferredHypothesis
-    }else{
-      const userMetadata = await GET(
-        "http://localhost:8000/personnal/users/"+this.$store.$auth.user.pk+"/usermeta",
-      );
-      user_preferred_hypothesis_id = userMetadata["preferred_hypothesis_id"]
+    let user_preferred_hypothesis_id = this.$cookies.get("preferred-hypothesis")
+
+    console.log(this.$store.$auth.user)
+    if (user_preferred_hypothesis_id === undefined || user_preferred_hypothesis_id === "") {
+      user_preferred_hypothesis_id = this.$store.$auth.user.usermeta.preferred_hypothesis
       this.$cookies.set("preferred-hypothesis", user_preferred_hypothesis_id, {
         path: "/",
         maxAge: 7 * 24
       });
     }
-
+    
     const userPreferredHypothesis= await GET(
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id,
     );
@@ -227,6 +223,23 @@ export default {
       this.initBigChart(index);
       this.$forceUpdate()
     },
+    async set_preferred(row) {
+      const hypothesisData = await PATCH(
+        "http://localhost:8000/personnal/users/"+this.$store.$auth.user.pk+"/usermeta",
+         {"preferred_hypothesis_id": row.id}
+      );
+    },
+    async remove_chart(row) {
+      const hypothesisData = await DELETE(
+        "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+row.id,
+      );
+
+      this.$cookies.remove("preferred-hypothesis", {
+        path: "/",
+        maxAge: 24 * 7
+      });
+
+    },
     async update_chart(row) {
       const hypothesisData = await GET(
         "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+row.id+"/hypothesis_data",
@@ -236,11 +249,12 @@ export default {
       var bigChartData = []
       for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
       this.bigChartData = bigChartData;
-
-      this.$cookies.set("preferred-hypothesis", row.id, {
-        path: "/",
-        maxAge: 24 * 7
-      });
+      if (row != null) {
+        this.$cookies.set("preferred-hypothesis", row.id, {
+          path: "/",
+          maxAge: 24 * 7
+        });
+      }
     },
   },
   mounted () {
