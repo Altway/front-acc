@@ -20,14 +20,6 @@
         </sidebar-item>
         <sidebar-item
           :link="{
-            name: $t('sidebar.notifications'),
-            icon: 'tim-icons icon-bell-55',
-            path: '/edu'
-          }"
-        >
-        </sidebar-item> 
-        <sidebar-item
-          :link="{
             name: $t('sidebar.userProfile'),
             icon: 'tim-icons icon-single-02',
             path: '/user' }"

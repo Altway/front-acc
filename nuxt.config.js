@@ -72,7 +72,8 @@ export default {
     '@nuxtjs/proxy',
     '@nuxtjs/axios',
     '@nuxtjs/auth-next',
-    'cookie-universal-nuxt'
+    'cookie-universal-nuxt',
+    'vue-sweetalert2/nuxt'
   ],
   http: {
 

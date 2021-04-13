@@ -81,7 +81,7 @@
                   </base-button>
                 </el-tooltip>
                 <el-tooltip content="Delete" :open-delay="300" placement="top">
-                  <base-button type="danger" size="sm" icon @click="remove_chart(row)">
+                  <base-button type="danger" size="sm" icon @click="ask_for_removal(row)">
                     <i class="tim-icons icon-simple-remove"></i>
                   </base-button>
                 </el-tooltip>
@@ -100,6 +100,7 @@ import TaskList from '@/components/Dashboard/TaskList';
 import config from '@/config';
 import { Table, TableColumn } from 'element-ui';
 
+import { BaseAlert } from '@/components';
 import { GET, POST, DELETE, PATCH , PUT} from '@/util/request.js';
 
 import { mapMutations } from 'vuex'
@@ -107,18 +108,18 @@ import { mapMutations } from 'vuex'
 export default {
   async fetch() {
     // Query the user's preferred hypothesis
-
     let user_preferred_hypothesis_id = this.$cookies.get("preferred-hypothesis")
 
+    console.log(user_preferred_hypothesis_id)
     console.log(this.$store.$auth.user)
-    if (user_preferred_hypothesis_id === undefined || user_preferred_hypothesis_id === "") {
+
+    if ((user_preferred_hypothesis_id === undefined || user_preferred_hypothesis_id === "") && this.$store.$auth.user.usermeta !== null) {
       user_preferred_hypothesis_id = this.$store.$auth.user.usermeta.preferred_hypothesis
       this.$cookies.set("preferred-hypothesis", user_preferred_hypothesis_id, {
         path: "/",
         maxAge: 7 * 24
       });
     }
-    
     const userPreferredHypothesis= await GET(
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id,
     );
@@ -134,21 +135,13 @@ export default {
     let bigChartData = []
     for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
     this.bigChartData = bigChartData;
-
+    
     // We query a specific hypothesis to display in the graph
     // {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
     const hypothesisList = await GET(
       "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis",
     );
     this.hypothesisList = hypothesisList
-   
-    /* Snippet pour les Cookies
-    this.$cookies.set("cookie-name", "cookie-value", {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7
-    });
-    const cookieRes = this.$cookies.get("cookie-name");
-    console.log(cookieRes);*/
   },
   fetchOnServer: false,
   name: 'dashboard',
@@ -156,11 +149,16 @@ export default {
     LineChart,
     BarChart,
     TaskList,
+    BaseAlert,
     [Table.name]: Table,
     [TableColumn.name]: TableColumn
   },
   data () {
     return {
+      type: ['', 'info', 'success', 'warning', 'danger'],
+      notifications: {
+        topCenter: false
+      },
       tableData: [],
       bigChartData: {},
       bigChartLabels: [],
@@ -225,20 +223,40 @@ export default {
     },
     async set_preferred(row) {
       const hypothesisData = await PATCH(
-        "http://localhost:8000/personnal/users/"+this.$store.$auth.user.pk+"/usermeta",
-         {"preferred_hypothesis_id": row.id}
+        "http://localhost:8000/personnal/users/"+this.$store.$auth.user.pk+"/usermeta/",
+        {"Content-type": "application/json"},
+        {"preferred_hypothesis": row.id, "user": this.$store.$auth.user.pk},
       );
+      if (row != null) {
+        this.$cookies.set("preferred-hypothesis", row.id, {
+          path: "/",
+          maxAge: 24 * 7
+        });
+      }
+      // THIS HYP IS NOW YOUR FAVOURITE
+      this.notifyVue({message: "Hypothesis "+row.name+" is now your favourite"})
+    },
+    ask_for_removal(row) {
+      this.$swal({  
+        title: "Do you want to delete this record",  
+        text: "This will be record from Database",  
+        type: "warning",  
+        showCancelButton: true,  
+        confirmButtonColor: "#4026e3",  
+        confirmButtonText: "Yes, remove it it!"  
+      }).then((result) => { if (result.value) {
+        this.remove_chart(row)
+        this.notifyVue({message: "Hypothesis "+row.name+" Has been deleted", timeout: 3000})
+      ;}});  
     },
     async remove_chart(row) {
       const hypothesisData = await DELETE(
         "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+row.id,
       );
-
       this.$cookies.remove("preferred-hypothesis", {
         path: "/",
         maxAge: 24 * 7
       });
-
     },
     async update_chart(row) {
       const hypothesisData = await GET(
@@ -249,12 +267,18 @@ export default {
       var bigChartData = []
       for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
       this.bigChartData = bigChartData;
-      if (row != null) {
-        this.$cookies.set("preferred-hypothesis", row.id, {
-          path: "/",
-          maxAge: 24 * 7
-        });
-      }
+      this.notifyVue({message: "I'm displaying Hypothesis "+row.name, timeout: 3000})
+    },
+    notifyVue({message, verticalAlign='top', horizontalAlign='right', timeout=30000} = {}) {
+      let color = Math.floor(Math.random() * 4 + 1);
+      this.$notify({
+        message: message,
+        timeout: timeout,
+        icon: 'tim-icons icon-bell-55',
+        horizontalAlign: horizontalAlign,
+        verticalAlign: verticalAlign,
+        type: this.type[color]
+      });
     },
   },
   mounted () {
