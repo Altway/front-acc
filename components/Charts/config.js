@@ -65,6 +65,8 @@ export let lineChartOptionsBlue = {
     position: 'nearest'
   },
   responsive: true,
+  maintainAspectRatio: true,
+  aspectRatio: 1,
   scales: {
     yAxes: [
       {

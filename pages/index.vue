@@ -1,7 +1,11 @@
 <template>
   <div class="row">
     <div class="col-12">
-      {{ this.couille }}
+      <div>
+        <div>{{ this.couille }}</div>
+        <div>{{ this.meh }}</div>
+        <button @click="refresh">Refresh</button>
+      </div>
       <!--
       <div>
                   <input
@@ -11,20 +15,25 @@
       </div>
       -->
       <card type="chart">
-        <template slot="header">
+        <span slot="header">
           <div class="row">
+
             <div class="col-sm-6">
               <h5 class="card-category">Portefolio Value</h5>
               <h2 class="card-title">Performance</h2>
             </div>
+          </div> 
+        </span>
+
+
             <div class="col-sm-6 d-flex d-sm-block">
               <div
                 class="btn-group btn-group-toggle"
                 data-toggle="buttons"
               >
+                  <!-- :key="option.name"  -->
                 <label
                   v-for="(option, index) in this.bigLineChartCategories"
-                  :key="option.name"
                   class="btn btn-sm btn-primary btn-simple"
                   :class="{ active: couille.activeIndex === index }"
                   :id="index"
@@ -43,19 +52,21 @@
                 </label>
               </div>
             </div>
-          </div>
-        </template>
-        <!-- <div class="chart-area"> -->
+      </card>
+        <div class="chart-area">
+            <!-- :key="couille" -->
         <div v-if="dataReady">
           <line-chart
             style="lineChartStyle"
             :chart-data="couille"
-            :key="couille"
             v-model="couille"
           >
           </line-chart>
         </div>
-      </card>
+        </div>
+
+
+
     </div>
     <div class="col-lg-7" v-if="dataReady">
       <card card-body-classes="table-full-width">
@@ -124,7 +135,32 @@ import { mapMutations } from 'vuex'
 import BaseRadio from '../components/Inputs/BaseRadio.vue';
 
 export default {
-  async fetch() {
+  async asyncData (context) {
+    // console.log(context)
+  // Only available on the Server-side
+  if (process.server) {
+    const { req, res, beforeNuxtRender } = context
+    console.log("SERVER")
+  }
+
+  // Only available on the Client-side
+  if (process.client) {
+    const { from, nuxtState } = context
+    console.log("CLIENT")
+  }
+  return {
+    meh: 123
+  }
+    /*
+    try {
+      await store.dispatch('getStore', params.category)
+    } catch (e) {
+      return error({
+        message: e.message,
+        statusCode: e.Response.status
+      })
+    }
+    */
   },
   fetchOnServer: false,
   name: 'dashboard',
@@ -180,6 +216,12 @@ export default {
     }
   },
   methods: {
+    refresh() {
+      window.onNuxtReady(() => {
+        console.log('Nuxt.js is ready and mounted')
+      })
+      this.$nuxt.refresh()
+    },
     initBigChart (index) {
       /* TODO: une varialbe de data n'est pas update dans une methode faut passer par le store ou je sais pas quoi tellement ça pue la merde
       */
@@ -191,6 +233,7 @@ export default {
             data: value[indexTranslate[index]]
           })
       }
+      console.log(tmp)
       let chartData = {
         datasets: tmp,
         labels: this.bigChartLabels
@@ -227,7 +270,7 @@ export default {
     ask_for_removal(row) {
       this.$swal({  
         title: "Do you want to delete this record",  
-        text: "This will be record from Database",  
+        text: "This will be removed from Database",  
         type: "warning",  
         showCancelButton: true,  
         confirmButtonColor: "#4026e3",  
@@ -247,6 +290,8 @@ export default {
       });
     },
     async update_chart(row) {
+      console.log("RIW")
+      console.log(row)
       const hypothesisData = await GET(
         "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+row.id+"/hypothesis_data",
       );
@@ -255,6 +300,12 @@ export default {
       var bigChartData = []
       for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
       this.bigChartData = bigChartData;
+      let chartData = {
+        datasets: bigChartData,
+        labels: this.bigChartLabels
+      }
+      this.couille = chartData
+      console.log(bigChartData)
       this.notifyVue({message: "I'm displaying Hypothesis "+row.name, timeout: 3000})
     },
     notifyVue({message, verticalAlign='top', horizontalAlign='right', timeout=30000} = {}) {
@@ -269,7 +320,7 @@ export default {
       });
     },
     async handleSelectionChange(content) {
-      let index_list = []
+      let index_list = [0]
       for (const [key, value] of Object.entries(content)) {index_list.push(parseInt(key));}
       this.checkedHypothesis = index_list
       let dataMatrix = {}
@@ -287,6 +338,10 @@ export default {
     }
   },
   async mounted () {
+    this.$nextTick(() => {
+      this.$nuxt.$loading.start()
+      setTimeout(() => this.$nuxt.$loading.finish(), 500)
+    })
     // Query the user's preferred hypothesis
     let user_preferred_hypothesis_id = this.$cookies.get("preferred-hypothesis")
 
@@ -319,7 +374,9 @@ export default {
     );
     this.hypothesisList = hypothesisList
 
+    await this.handleSelectionChange([hypothesisList[0]])
     this.initBigChart(0);
+
     this.dataReady = true;
   }
 }
