@@ -1,5 +1,6 @@
 <template>
-  <div class="small">
+  <!-- <div class="small"> -->
+  <div>
     <line-chart :chartData="chartData"></line-chart>
   </div>
 </template>

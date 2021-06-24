@@ -1,6 +1,15 @@
 <template>
   <div class="row">
     <div class="col-12">
+      {{ this.couille }}
+      <!--
+      <div>
+                  <input
+                    type="radio"
+                    @click="initBigChart(0)"
+                    />
+      </div>
+      -->
       <card type="chart">
         <template slot="header">
           <div class="row">
@@ -17,15 +26,15 @@
                   v-for="(option, index) in this.bigLineChartCategories"
                   :key="option.name"
                   class="btn btn-sm btn-primary btn-simple"
-                  :class="{ active: bigLineChart.activeIndex === index }"
+                  :class="{ active: couille.activeIndex === index }"
                   :id="index"
                 >
                   <input
                     type="radio"
-                    @click="change(index)"
+                    @click="initBigChart(index)"
                     name="options"
                     autocomplete="off"
-                    :checked="bigLineChart.activeIndex === index"
+                    :checked="couille.activeIndex === index"
                   />
                   <span class="d-none d-sm-block">{{ option.name }}</span>
                   <span class="d-block d-sm-none">
@@ -36,29 +45,33 @@
             </div>
           </div>
         </template>
-        <div class="chart-area">
+        <!-- <div class="chart-area"> -->
+        <div v-if="dataReady">
           <line-chart
-            style="height: 100%"
-            ref="bigChart"
-            :chart-data="this.bigLineChart.chartData"
-            :gradient-colors="bigLineChart.gradientColors"
-            :gradient-stops="bigLineChart.gradientStops"
-            :extra-options="bigLineChart.extraOptions"
+            style="lineChartStyle"
+            :chart-data="couille"
+            :key="couille"
+            v-model="couille"
           >
           </line-chart>
         </div>
       </card>
     </div>
-    <div class="col-lg-7">
+    <div class="col-lg-7" v-if="dataReady">
       <card card-body-classes="table-full-width">
         <h4 slot="header" class="card-title">Saved Hypothesis</h4>
-        <el-table :data="this.hypothesisList">
+        <el-table 
+        :data="this.hypothesisList"
+        ref="checkedHypothesis"
+        @selection-change="handleSelectionChange"
+        >
           <el-table-column
             min-width="150"
             sortable
+            type="selection"
             label="Hypothesis name"
-            property="name"
-          ></el-table-column>
+            property="name">
+          </el-table-column>
           <el-table-column
             min-width="150"
             sortable
@@ -87,6 +100,10 @@
                 </el-tooltip>
               </div>
           </el-table-column>
+          <!--<div style="margin-top: 20px">
+            <el-button @click="toggleSelection([tableData[1], tableData[2]])">Toggle selection status of second and third rows</el-button>
+            <el-button @click="toggleSelection()">Clear selection</el-button>
+          </div> -->
         </el-table>
       </card>
     </div>
@@ -104,44 +121,10 @@ import { BaseAlert } from '@/components';
 import { GET, POST, DELETE, PATCH , PUT} from '@/util/request.js';
 
 import { mapMutations } from 'vuex'
+import BaseRadio from '../components/Inputs/BaseRadio.vue';
 
 export default {
   async fetch() {
-    // Query the user's preferred hypothesis
-    let user_preferred_hypothesis_id = this.$cookies.get("preferred-hypothesis")
-
-    console.log(user_preferred_hypothesis_id)
-    console.log(this.$store.$auth.user)
-
-    if ((user_preferred_hypothesis_id === undefined || user_preferred_hypothesis_id === "") && this.$store.$auth.user.usermeta !== null) {
-      user_preferred_hypothesis_id = this.$store.$auth.user.usermeta.preferred_hypothesis
-      this.$cookies.set("preferred-hypothesis", user_preferred_hypothesis_id, {
-        path: "/",
-        maxAge: 7 * 24
-      });
-    }
-    const userPreferredHypothesis= await GET(
-      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id,
-    );
-    this.tableData = userPreferredHypothesis.allocation
-
-    // Query the hypothesis data
-    const hypothesisData = await GET(
-      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id+"/hypothesis_data",
-    );
-    this.bigChartLabels = hypothesisData["bigChartLabels"];
-
-    // For each different mathematical calculation we populate the graph
-    let bigChartData = []
-    for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
-    this.bigChartData = bigChartData;
-    
-    // We query a specific hypothesis to display in the graph
-    // {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
-    const hypothesisList = await GET(
-      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis",
-    );
-    this.hypothesisList = hypothesisList
   },
   fetchOnServer: false,
   name: 'dashboard',
@@ -155,14 +138,18 @@ export default {
   },
   data () {
     return {
+      dataReady: false,
       type: ['', 'info', 'success', 'warning', 'danger'],
       notifications: {
         topCenter: false
       },
+      checkedHypothesis: [],
       tableData: [],
       bigChartData: {},
       bigChartLabels: [],
       hypothesisList: [],
+      couille: {},
+      a: {},
       hypothesis_name: "",
       bigLineChartCategories: [
         {name: 'simple', icon: 'tim-icons icon-single-02'}, 
@@ -186,40 +173,41 @@ export default {
     };
   },
   computed: {
-    bigLineChart () {
-      return {
-        activeIndex: 0,
-        chartData: {
-          datasets: [
-            {
-              ...this.bigChartDatasetOptions,
-              data: this.bigChartData[0]
-            }
-          ],
-          labels: this.bigChartLabels
-        },
-        extraOptions: chartConfigs.purpleChartOptions,
-        gradientColors: config.colors.primaryGradient,
-        gradientStops: [1, 0.4, 0],
-        categories: this.bigLineChartCategories
-      };
-    },
+    lineChartStyle () {
+      return  {
+        position: 'relative'
+      }
+    }
   },
   methods: {
     initBigChart (index) {
+      /* TODO: une varialbe de data n'est pas update dans une methode faut passer par le store ou je sais pas quoi tellement ça pue la merde
+      */
+      let indexTranslate = {'0': 'simple', '1': 'cumsum', '2': 'pct'}
+      let tmp = []
+      for (let [key, value] of Object.entries(this.a)) {
+          tmp.push({
+            ...this.bigChartDatasetOptions,
+            data: value[indexTranslate[index]]
+          })
+      }
       let chartData = {
+        datasets: tmp,
+        labels: this.bigChartLabels
+      }
+      /*
+     let chartData = {
         datasets: [{
           ...this.bigChartDatasetOptions,
           data: this.bigChartData[index]
         }],
         labels: this.bigChartLabels
       };
-      this.bigLineChart.chartData = chartData;
-      this.bigLineChart.activeIndex = index;
-    },
-    change (index) {
-      this.initBigChart(index);
-      this.$forceUpdate()
+      */
+      this.couille = chartData
+      this.couille.activeIndex = index
+
+      this.$forceUpdate();
     },
     async set_preferred(row) {
       const hypothesisData = await PATCH(
@@ -280,9 +268,59 @@ export default {
         type: this.type[color]
       });
     },
+    async handleSelectionChange(content) {
+      let index_list = []
+      for (const [key, value] of Object.entries(content)) {index_list.push(parseInt(key));}
+      this.checkedHypothesis = index_list
+      let dataMatrix = {}
+
+      for (const [key, value] of Object.entries(content)) {
+        let hypothesis_data = await GET(
+          "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+value['id']+"/hypothesis_data",
+        )
+          dataMatrix[value['id']] = {'simple': [], 'cumsum': [], 'pct': []}
+          dataMatrix[value['id']]['simple'] = hypothesis_data['bigChartData']['simple']
+          dataMatrix[value['id']]['cumsum'] = hypothesis_data['bigChartData']['simple']
+          dataMatrix[value['id']]['pct'] = hypothesis_data['bigChartData']['simple']
+      }
+      this.a = dataMatrix
+    }
   },
-  mounted () {
+  async mounted () {
+    // Query the user's preferred hypothesis
+    let user_preferred_hypothesis_id = this.$cookies.get("preferred-hypothesis")
+
+    // console.log(user_preferred_hypothesis_id)
+    // console.log(this.$store.$auth.user)
+
+    if ((user_preferred_hypothesis_id === undefined || user_preferred_hypothesis_id === "") && this.$store.$auth.user.usermeta !== null) {
+      user_preferred_hypothesis_id = this.$store.$auth.user.usermeta.preferred_hypothesis
+      this.$cookies.set("preferred-hypothesis", user_preferred_hypothesis_id, {
+        path: "/",
+        maxAge: 7 * 24
+      });
+    }
+
+    // Query the hypothesis data
+    const hypothesisData = await GET(
+      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis/"+user_preferred_hypothesis_id+"/hypothesis_data",
+    );
+    this.bigChartLabels = hypothesisData["bigChartLabels"];
+
+    // For each different mathematical calculation we populate the graph
+    let bigChartData = []
+    for (const [key, value] of Object.entries(hypothesisData["bigChartData"])) {bigChartData.push(value);}
+    this.bigChartData = bigChartData;
+    
+    // We query a specific hypothesis to display in the graph
+    // {"Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
+    const hypothesisList = await GET(
+      "http://localhost:8000/strategy/users/"+this.$store.$auth.user.pk+"/hypothesis",
+    );
+    this.hypothesisList = hypothesisList
+
     this.initBigChart(0);
+    this.dataReady = true;
   }
 }
 </script>
