@@ -1,3 +1,5 @@
+export NODE_OPTIONS=--openssl-legacy-provider
+
 # [Nuxt Black Dashboard](https://demos.creative-tim.com/nuxt-black-dashboard) [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&logo=twitter)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fdemos.creative-tim.com%2Fnuxt-black-dashboard&text=Nuxt%20Black%20Dashboard%20-%20Nuxt%20Admin%20Template&original_referer=https%3A%2F%2Fdemos.creative-tim.com%2Fnuxt-black-dashboard%2F&via=creativetim&hashtags=vuejs%2Cbootstrap%2Cnuxt%2Ccreativetim%2Ccreativetimofficial)
 
 

@@ -96,8 +96,8 @@
       this.goals_list = await fetch('http://localhost:8000/strategy/goals').then(res => res.json())
       let r = await fetch('http://localhost:8000/strategy/coins_list').then(res => res.json())
       this.options = r.map(el=>el.symbol)
-      let t = await fetch('http://localhost:8000/strategy/snippets').then(res => res.json())
-      this.tmp = await this.$store.$auth.fetchUser()
+      //let t = await fetch('http://localhost:8000/strategy/snippets').then(res => res.json())
+      //this.tmp = await this.$store.$auth.fetchUser()
     },
     fetchOnServer: false,
     data() {
@@ -165,7 +165,7 @@
           method: "GET",
           headers: { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
         };
-        let a = await fetch('http://localhost:8000/strategy/snippets/', bopi).then(r => r.json());
+        //let a = await fetch('http://localhost:8000/strategy/snippets/', bopi).then(r => r.json());
         //console.log(a)
       },
       update_strategy(choice) {

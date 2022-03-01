@@ -74,7 +74,7 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /deep/ i {
+  ::v-deep i {
     padding: 0 3px;
   }
 }
