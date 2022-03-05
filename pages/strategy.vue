@@ -2,7 +2,7 @@
   <div class="row">
     <base-button @click="test()">Test</base-button>
     <div>
-      <multiselect placeholder="Select coins" :taggable="true" :options="options" :multiple="true" :close-on-select="false" v-model="coins_selected"></multiselect>
+      <multiselect placeholder="Select coins" :taggable="true" :options="options" :multiple="true" :close-on-select="false" v-model="tickers_selected"></multiselect>
     </div>
     <base-input type="=capital" label="Capital" placeholder="Capital" v-model="capital"/>
     <base-input type="risk_free_rate" label="Risk free rate" placeholder="Risk free rate" v-model="risk_free_rate"/>
@@ -123,7 +123,7 @@
         capital: 0,
         value: null,
         expected_return: 0,
-        coins_selected: null,
+        tickers_selected: null,
         stored_coins: null,
         options: [],
         goals_list: [],
@@ -145,7 +145,7 @@
     mounted() {
       if (localStorage.getItem("stored_coins")) {
         try {
-          this.coins_selected = JSON.parse(localStorage.getItem("stored_coins"))
+          this.tickers_selected = JSON.parse(localStorage.getItem("stored_coins"))
         } catch(e) {
           localStorage.removeItem("stored_coins")
         }
@@ -182,13 +182,13 @@
           "name": this.name,
           "risk_choice": this.risk_choice,
           "risk_model_id": 1,
-          "user_id": this.$store.$auth.user.pk,
+          "user": this.$store.$auth.user.pk,
           "broker_fees": this.broker_fees,
           "capital": this.capital,
           "expected_returns_id": 1,
           "expected_return": this.expected_return,
           "risk_free_rate": this.risk_free_rate,
-          "coins_selected": this.coins_selected,
+          "tickers_selected": this.tickers_selected.toString(),
           "short_selling": this.short_selling,
           "method_choice": this.method_choice,
           "returns_choice": this.returns_choice,
@@ -199,16 +199,25 @@
           this.method_choice = "HRPOpt"
         if (this.method_choice == "HRPOpt")
           //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
-          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/snippets/', payload);
+          this.final_allocation = await this.$http.$post(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hropt/`, payload);
+          //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/snippets/', payload);
         else if (this.method_choice == "Historical")
-          this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/historical', payload);
+          console.log(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/historical`)
+          console.log(payload)
+          this.final_allocation = await this.$http.$post(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/historical/`, payload);
+          //this.userData = await fetch(`http://localhost:8000/personnal/user/${id}`).then(res => res.json())
 
+        const hypothesis = await this.$http.$get(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hypothesis/${this.final_allocation['hypothesis_id']}/`, payload);
+        console.log(hypothesis)
+        //this.final_allocation = this.final_allocatio.map(el=>el.symbol)
+        let b = JSON.parse(hypothesis['allocation'])
+        console.log(b)
         let calculated_chartdata = {
-          labels: Object.keys(this.final_allocation),
+          labels: Object.keys(b),
           datasets: [{
             label: 'Allocation',
             backgroundColor: ['#00c09d', '#e2e2e2'],
-            data: Object.values(this.final_allocation)
+            data: Object.values(b)
           }]
         }
         this.chart_data = calculated_chartdata;
