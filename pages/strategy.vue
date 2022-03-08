@@ -72,7 +72,7 @@
         </form>
     <div class="col-md-12">
       <card>
-        <div>{{ final_allocation }}</div>
+        <!--<div>{{ final_allocation }}</div>-->
         <!--<div><client-only><RandomChart/></client-only></div>-->
         <div>
           <!-- <LineChart :chartData="chart_data"/> -->
@@ -199,15 +199,15 @@
           this.method_choice = "HRPOpt"
         if (this.method_choice == "HRPOpt")
           //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/hrpopt', payload);
-          this.final_allocation = await this.$http.$post(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hropt/`, payload);
+          this.final_allocation = await this.$http.$post(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hierarchical/`, payload);
           //this.final_allocation = await this.$http.$post('http://localhost:8000/strategy/snippets/', payload);
         else if (this.method_choice == "Historical")
-          console.log(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/historical`)
-          console.log(payload)
+          //console.log(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/historical`)
+          //console.log(payload)
           this.final_allocation = await this.$http.$post(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/historical/`, payload);
           //this.userData = await fetch(`http://localhost:8000/personnal/user/${id}`).then(res => res.json())
 
-        const hypothesis = await this.$http.$get(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hypothesis/${this.final_allocation['hypothesis_id']}/`, payload);
+        const hypothesis = await this.$http.$get(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hypothesis/${this.final_allocation['hypothesis_id']}/`);//, payload);
         console.log(hypothesis)
         //this.final_allocation = this.final_allocatio.map(el=>el.symbol)
         let b = JSON.parse(hypothesis['allocation'])

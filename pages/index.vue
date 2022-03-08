@@ -138,10 +138,10 @@ export default {
         hypothesis_name: this.hypothesis_name,
         user_id: this.$store.$auth.user.pk
     }
-    this.tableData = await fetch("http://localhost:8000/strategy/preferred_hypothesis", preferredHypothesisOptions).then(r => r.json());
+    this.userMeta =  await this.$http.$get(`http://localhost:8000/personal/users/${this.$store.$auth.user.pk}/usermeta/`);
     //this.tableData = meh.allocation
     //this.tableData = await this.$http.$post('http://localhost:8000/strategy/preferred_hypothesis/', payload);
-    console.log(this.tableData)
+    console.log(this.userMeta.preferred_hypothesis)
     const hypothesisdataOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -150,7 +150,8 @@ export default {
         user_id: this.$store.$auth.user.pk
       })
     };
-    const hypothesisData = await fetch("http://localhost:8000/strategy/hypothesis_data", hypothesisdataOptions).then(r => r.json());
+    //const hypothesisData =await this.$http.$get(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hypothesis/${this.userMeta.preferred_hypothesis}/hypothesis_data`, hypothesisdataOptions).then(r => r.json());
+    const hypothesisData =await this.$http.$get(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hypothesis/${this.userMeta.preferred_hypothesis}/hypothesis_data`);
     console.log(hypothesisData)
     this.bigChartLabels = hypothesisData["bigChartLabels"];
     var bigChartData = []
@@ -161,7 +162,7 @@ export default {
       headers: { "Content-Type": "application/json", "Authorization": this.$store.$auth.strategy.token.get()},
     };
    // const hypothesisList = await fetch("http://localhost:8000/strategy/hypothesis/1/", hypothesisListOptions).then(r => r.json());
-    this.hypothesisList = await fetch('http://localhost:8000/strategy/users/2/hypothesis', hypothesisListOptions).then(res => res.json())
+    this.hypothesisList = await this.$http.$get(`http://localhost:8000/strategy/users/${this.$store.$auth.user.pk}/hypothesis/`);
     console.log(this.hypothesisList)
     this.$cookies.set("cookie-name", "cookie-value", {
       path: "/",

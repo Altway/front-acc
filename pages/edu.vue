@@ -81,7 +81,7 @@ export default {
   methods: {
     async updateUser() {
       const id = 1
-      //this.userData = await fetch(`http://localhost:8000/personnal/user/${id}`).then(res => res.json())
+      //this.userData = await fetch(`http://localhost:8000/personal/user/${id}`).then(res => res.json())
       //console.log(this.userData)
       console.log("ICICICICI")
     }

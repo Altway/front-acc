@@ -90,7 +90,7 @@ export default {
     }
   },
   async fetch() {
-    this.tableData = await fetch('http://localhost:8000/personnal').then(res => res.json())
+    this.tableData = await fetch('http://localhost:8000/personal').then(res => res.json())
   },
   fetchOnServer: false,
   name: 'regular',
